@@ -9,6 +9,7 @@ namespace Arcanoid.Models;
 public abstract class DisplayObject
 {
     public Shape Shape { get; set; }
+    public Rectangle hitBoxShape;
     public Canvas Canvas { get; set; }
     public double X { get; set; } 
     public double Y{ get; set; }
@@ -18,7 +19,7 @@ public abstract class DisplayObject
     public double AngleAcceleration{ get; set; }
     
     public byte r1,g1,b1,r2,g2,b2;
-    public List<int> size { get; set; }
+    public List<int> Size { get; set; }
 
     public DisplayObject(Canvas canvas, int _maxX, int _maxY)
     {

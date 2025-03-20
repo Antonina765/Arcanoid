@@ -28,10 +28,11 @@ public class StageShapeManager
                 _stage.GameCanvas, 
                 maxX, maxY, 
                 new List<int> { random.Next(20, 150) },
+                new List<int> { random.Next(20, 150) },
                 R1, G1, B1, R2, G2, B2)
             );
 
-            // Создаем прямоугольник
+            /*// Создаем прямоугольник
             (R1, G1, B1) = GetRandomBrush(); 
             (R2, G2, B2) = GetRandomBrush(); 
             _stage.Shapes.Add(new RectangleObject(
@@ -59,7 +60,7 @@ public class StageShapeManager
                 maxX, maxY, 
                 new List<int> { random.Next(20, 70), random.Next(20, 70), random.Next(20, 70) },
                 R1, G1, B1, R2, G2, B2)
-            );
+            );*/
         }
     }
 

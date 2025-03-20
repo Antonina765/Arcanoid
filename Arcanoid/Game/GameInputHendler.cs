@@ -27,17 +27,6 @@ public class GameInputHendler
         {
             if (e.Key == Key.Space)
             {
-                /*if (_game.IsRunWithAcceleration || _game.IsRunWithoutAcceleration)
-                {
-                    _game.MovementManager.StopMovement();
-                    _game.IsRunWithAcceleration = false;
-                    _game.IsRunWithoutAcceleration = false;
-                }
-                else
-                {
-                    _game.MovementManager.StartMovement(0);
-                    _game.IsRunWithAcceleration = true;
-                }*/
                 _game.MovementManager.StopMovement();
                 _game.IsRunWithAcceleration = false;
                 _game.IsRunWithoutAcceleration = false;

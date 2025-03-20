@@ -31,7 +31,7 @@ public class StageDataManager
                 R2 = shape.r2, 
                 G2 = shape.g2, 
                 B2 = shape.b2, 
-                Size = shape.size
+                Size = shape.Size
             }; 
             shapesData.Add(data);
         } 
@@ -53,7 +53,7 @@ public class StageDataManager
             switch (data.ShapeType) 
             { 
                 case "CircleObject": 
-                    shape = new CircleObject(_stage.GameCanvas, 800, 800, data.Size, r1, g1, b1, r2, g2, b2); 
+                    shape = new CircleObject(_stage.GameCanvas, 800, 800, data.Size, data.Size, r1, g1, b1, r2, g2, b2); 
                     break;
                 
                 case "RectangleObject": 

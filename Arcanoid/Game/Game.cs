@@ -35,7 +35,7 @@ public class Game
     public bool IsRunWithAcceleration { get; set; } = false; 
     public bool IsRunWithoutAcceleration { get; set; } = false;
     public bool IsMenuOpen { get; set; } = false; 
-    public int ShapeCount { get; set; } = 10; 
+    public int ShapeCount { get; set; } = 20; 
     public int MaxX { get; set; } 
     public int MaxY { get; set; }
 
@@ -91,25 +91,8 @@ public class Game
         
        MainWindow.Content = border; 
        MainWindow.KeyDown += _inputHandler.HandleKeyDown;
-        
-       //MaxX = (int)MainWindow.Width; 
-       //MaxY = (int)MainWindow.Height;
-       /*MainWindow.Opened += (sender, args) =>
-       {
-           if (!_shapesSpawned)
-           {
-               // Используем реальные размеры окна
-               MaxX = (int)MainWindow.Bounds.Width;
-               MaxY = (int)MainWindow.Bounds.Height;
-               Console.WriteLine($"Window size (MaxX x MaxY): {MaxX} x {MaxY}");
-
-               // При старте игры создаём фигуры
-               ShapeManager.AddRandomShapes(ShapeCount, MaxX, MaxY);
-               _shapesSpawned = true;
-           }
-       };*/
-       // Подписываемся на событие Opened
-      MainWindow.Opened += MainWindow_Opened;
+       
+       MainWindow.Opened += MainWindow_Opened;
     }
 
     private void MainWindow_Opened(object sender, EventArgs e)
