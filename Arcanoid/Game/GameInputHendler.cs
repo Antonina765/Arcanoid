@@ -1,72 +1,68 @@
+using System;
 using Avalonia.Input;
 
 namespace Arcanoid.Game;
 
-public class GameInputHendler
-{ 
-    private readonly Game _game;
-    public GameInputHendler(Game game) 
-    { 
-        _game = game;
-    }
-
-    public void HandleKeyDown(object sender, KeyEventArgs e)
+public class GameInputHelder
     {
-        if (e.Key == Key.P)
+        private readonly Stage.Stage _stage;
+        private readonly Action _toggleFullScreen;
+        private readonly Func<bool> _isMenuOpen;
+
+        private bool _isRunWithAcceleration;
+        private bool _isRunWithoutAcceleration;
+        
+        public GameInputHelder(Stage.Stage stage, Action toggleFullScreen, Func<bool> isMenuOpen)
         {
-            _game.ToggleFullScreen();
+            _stage = stage;
+            _toggleFullScreen = toggleFullScreen;
+            _isMenuOpen = isMenuOpen;
         }
-        else if (e.Key == Key.M)
+        
+        public void HandleKeyDown(KeyEventArgs e, Action toggleMenu)
         {
-            _game.MovementManager.StopMovement();
-            _game.IsRunWithAcceleration = false;
-            _game.IsRunWithoutAcceleration = false;
-            _game.ToggleMenu();
-        }
-        else if (!_game.IsMenuOpen)
-        {
-            if (e.Key == Key.Space)
+            if (e.Key == Avalonia.Input.Key.P)
             {
-                /*if (_game.IsRunWithAcceleration || _game.IsRunWithoutAcceleration)
+                _toggleFullScreen();
+            }
+            else if (e.Key == Avalonia.Input.Key.M)
+            {
+                _stage.MovementManager.StopMovement();
+                _isRunWithAcceleration = false;
+                _isRunWithoutAcceleration = false;
+                toggleMenu();
+            }
+            else if (!_isMenuOpen())
+            {
+                if (e.Key == Avalonia.Input.Key.Space)
                 {
-                    _game.MovementManager.StopMovement();
-                    _game.IsRunWithAcceleration = false;
-                    _game.IsRunWithoutAcceleration = false;
+                    _stage.MovementManager.StopMovement();
+                    _isRunWithAcceleration = false;
+                    _isRunWithoutAcceleration = false;
                 }
-                else
+                else if (e.Key == Avalonia.Input.Key.S)
                 {
-                    _game.MovementManager.StartMovement(0);
-                    _game.IsRunWithAcceleration = true;
-                }*/
-                _game.MovementManager.StopMovement();
-                _game.IsRunWithAcceleration = false;
-                _game.IsRunWithoutAcceleration = false;
-            }
-            else if (e.Key == Key.S)
-            {
-                // Запускаем движение фигур с равномерной скоростью (без ускорения)
-                _game.MovementManager.StartMovement(0);
-                _game.IsRunWithAcceleration = true;
-                _game.IsRunWithoutAcceleration = false;
-            }
-            else if (e.Key == Key.Z)
-            {
-                // При нажатии Z запускаем ускорение без остановки движения
-                _game.MovementManager.StartMovement(1);
-                _game.IsRunWithoutAcceleration = true;
-            }
-            else if (e.Key == Key.X)
-            {
-                // сбрасываем ускорение у всех фигур, оставляя их текущую скорость
-                foreach (var shape in _game.Stage.Shapes)
-                {
-                    shape.Acceleration = 0;
+                    // Запускаем движение с равномерной скоростью (без ускорения)
+                    _stage.MovementManager.StartMovement(0);
+                    _isRunWithAcceleration = true;
+                    _isRunWithoutAcceleration = false;
                 }
-                _game.IsRunWithAcceleration = true;
-                _game.IsRunWithoutAcceleration = false;
+                else if (e.Key == Avalonia.Input.Key.Z)
+                {
+                    // Запускаем ускорение без остановки движения
+                    _stage.MovementManager.StartMovement(1);
+                    _isRunWithoutAcceleration = true;
+                }
+                else if (e.Key == Avalonia.Input.Key.X)
+                {
+                    // Сбрасываем ускорение у всех фигур
+                    foreach (var shape in _stage.ShapeManager.Shapes)
+                    {
+                        shape.Acceleration = 0;
+                    }
+                    _isRunWithAcceleration = true;
+                    _isRunWithoutAcceleration = false;
+                }
             }
         }
     }
-
-}
-

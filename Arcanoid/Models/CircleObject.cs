@@ -11,6 +11,7 @@ public class CircleObject : DisplayObject
     public CircleObject(Canvas canvas,
         int _maxX,
         int _maxY,
+        List<int> hitBox,
         List<int> size,
         byte R1,
         byte G1,
@@ -23,7 +24,7 @@ public class CircleObject : DisplayObject
         _maxY
         )
     {
-        this.size = size;
+        this.Size = size;
         this.r1 = R1;
         this.g1 = G1;
         this.b1 = B1;
@@ -31,7 +32,7 @@ public class CircleObject : DisplayObject
         this.r2 = R2;
         this.g2 = G2;
         this.b2 = B2;
-        
+        hitBox = size;
         
         Shape = new Ellipse
         {

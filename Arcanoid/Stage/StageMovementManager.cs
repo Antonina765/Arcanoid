@@ -7,42 +7,42 @@ namespace Arcanoid.Stage;
 
 public class StageMovementManager
 {
-    private readonly Stage _stage;
+    private readonly StageShapeManager _shapeManager;
     private readonly DispatcherTimer _timer;
-   
-    
-    public StageMovementManager(Stage stage)
+        
+    public StageMovementManager(StageShapeManager shapeManager)
     {
-        _stage = stage;
+        _shapeManager = shapeManager;
         _timer = new DispatcherTimer
         {
             Interval = TimeSpan.FromMilliseconds(16)
         };
         _timer.Tick += OnTimerTick;
     }
-
-    private void OnTimerTick(object sender, EventArgs e)
-    {
-        foreach (var shape in _stage.Shapes)
-        {
-            shape.Move();
-        }
         
-    }
-
-    public void StartMovement(byte acceleration)
+    public void StartMovement(byte acc)
     {
-        foreach (var shape in _stage.Shapes)
+        // Запуск движения для каждой фигуры с указанным параметром ускорения
+        foreach (var shape in _shapeManager.Shapes)
         {
-            shape.StartMovement(acceleration);
+            shape.StartMovement(acc);
         }
         _timer.Start();
     }
-
+        
     public void StopMovement()
     {
         _timer.Stop();
     }
-    
+        
+    private void OnTimerTick(object sender, EventArgs e)
+    {
+        // На каждом тике проверка столкновений и перемещение фигур
+        for (int i = 0; i < _shapeManager.Shapes.Count; i++)
+        {
+            var shape = _shapeManager.Shapes[i];
+            _shapeManager.CheckCollision(shape, i);
+            shape.Move();
+        }
+    }
 }
-

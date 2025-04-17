@@ -12,161 +12,101 @@ using Avalonia.Media;
 namespace Arcanoid.Game;
 
 public class Game
-{
-    // Stage-объекты: контейнер и менеджеры
-    public Stage.Stage Stage { get; private set; } 
-    public StageMovementManager MovementManager { get; private set; }
-    public StageShapeManager ShapeManager { get; private set; } 
-    public StageDataManager DataManager { get; private set; }
-    
-    // UI
-    public Window MainWindow { get; private set; } 
-    private GameMenu _menu; 
-    private Grid _mainGrid; 
-    private Canvas _menuCanvas;
-
-    // Вспомогательные классы
-    private GameInputHendler _inputHandler; 
-    private GameFileManagment _fileManager; 
-    private GameMenuActions _menuActions;
-
-    // Состояния игры
-    public bool IsFullScreen { get; private set; } = true; 
-    public bool IsRunWithAcceleration { get; set; } = false; 
-    public bool IsRunWithoutAcceleration { get; set; } = false;
-    public bool IsMenuOpen { get; set; } = false; 
-    public int ShapeCount { get; set; } = 10; 
-    public int MaxX { get; set; } 
-    public int MaxY { get; set; }
-
-    // Флаг спавна фигур (чтобы добавление происходило только один раз)
-    private bool _shapesSpawned = false;
-
-    public Game(Window window) 
-    { 
-        MainWindow = window; 
-        MainWindow.WindowState = WindowState.FullScreen; 
-        //MainWindow.Width = 2318; 
-        //MainWindow.Height = 1449;
+    {
+        private readonly Stage.Stage _stage;
+        private readonly Window _mainWindow;
+        private readonly GameMenu _menu;
+        private Grid _mainGrid;
+        private Canvas _menuCanvas;
         
-        Stage = new Stage.Stage();
-        MovementManager = new StageMovementManager(Stage); 
-        ShapeManager = new StageShapeManager(Stage); 
-        DataManager = new StageDataManager(Stage);
+        private bool _isFullScreen = true;
+        private bool _isMenuOpen;
+        private int _shapeCount = 20;
+        
+        private readonly GameFileManager _fileManager;
+        private readonly GameInputHelder _inputHelder;
+        private readonly GameMenuActions _menuActions;
+        
+        public Game(Window window)
+        {
+            _mainWindow = window;
+            
+            _mainWindow.WindowState = WindowState.FullScreen;
+            _mainWindow.Width = 1430;
+            _mainWindow.Height = 800;
 
-        // Настройки UI для меню
-        _menuCanvas = new Canvas
-        { 
-            Background = Brushes.Transparent, 
-            IsHitTestVisible = false
-        };
-
-        // Инициализация помощников Game
-        _fileManager = new GameFileManagment(MainWindow, DataManager); 
-        _menuActions = new GameMenuActions(this); 
-        _inputHandler = new GameInputHendler(this);
-
-        // Создаем меню и передаем делегаты
-        _menu = new GameMenu(
-            _menuCanvas, 
-            _menuActions.StartGame,    
-            _fileManager.SaveGame,    
-            _fileManager.LoadGame,
-            _menuActions.Settings, 
-            _menuActions.Pause, 
-            _menuActions.Exit
+            var border = new Border
+            {
+                BorderBrush = Brushes.White,
+                BorderThickness = new Thickness(10),
+                Padding = new Thickness(10),
+            };
+            
+            _stage = new Stage.Stage();
+            _menuCanvas = new Canvas
+            {
+                Background = Brushes.Transparent,
+                IsHitTestVisible = false
+            };
+            
+            _fileManager = new GameFileManager(_mainWindow, _stage);
+            _inputHelder = new GameInputHelder(_stage, ToggleFullScreen, () => _isMenuOpen);
+            _menuActions = new GameMenuActions(_stage, _fileManager, _mainWindow, _shapeCount, ToggleMenu);
+            
+            _menu = new GameMenu(
+                _menuCanvas,
+                _menuActions.StartGame,
+                _menuActions.SaveGame,
+                _menuActions.LoadGame,
+                _menuActions.Settings,
+                _menuActions.Pause,
+                _menuActions.Exit
             );
-
-        _mainGrid = new Grid(); 
-        _mainGrid.Children.Add(Stage.GameCanvas); 
-        _mainGrid.Children.Add(_menuCanvas);
+            
+            _mainGrid = new Grid();
+            _mainGrid.Children.Add(_stage.GameCanvas);
+            _mainGrid.Children.Add(_menuCanvas);
+            
+            border.Child = _mainGrid;
+            _mainWindow.Content = border;
+            _mainWindow.KeyDown += OnKeyDown;
+        }
         
-        var border = new Border 
-        { 
-            BorderBrush = Brushes.White, 
-            BorderThickness = new Thickness(10), 
-            Padding = new Thickness(10), 
-            Child = _mainGrid
-        };
+        public void Start()
+        {
+            _stage.ShapeManager.AddRandomShapes(_shapeCount, (int)_mainWindow.Width, (int)_mainWindow.Height);
+        }
         
-       MainWindow.Content = border; 
-       MainWindow.KeyDown += _inputHandler.HandleKeyDown;
+        private void OnKeyDown(object sender, KeyEventArgs e)
+        {
+            _inputHelder.HandleKeyDown(e, ToggleMenu);
+        }
         
-       //MaxX = (int)MainWindow.Width; 
-       //MaxY = (int)MainWindow.Height;
-       /*MainWindow.Opened += (sender, args) =>
-       {
-           if (!_shapesSpawned)
-           {
-               // Используем реальные размеры окна
-               MaxX = (int)MainWindow.Bounds.Width;
-               MaxY = (int)MainWindow.Bounds.Height;
-               Console.WriteLine($"Window size (MaxX x MaxY): {MaxX} x {MaxY}");
-
-               // При старте игры создаём фигуры
-               ShapeManager.AddRandomShapes(ShapeCount, MaxX, MaxY);
-               _shapesSpawned = true;
-           }
-       };*/
-       // Подписываемся на событие Opened
-      MainWindow.Opened += MainWindow_Opened;
-    }
-
-    private void MainWindow_Opened(object sender, EventArgs e)
-    {
-        // Используем размеры канвы, а не MainWindow
-        MaxX = (int)Stage.GameCanvas.Bounds.Width;
-        MaxY = (int)Stage.GameCanvas.Bounds.Height;
-        Console.WriteLine($"Canvas size (MaxX x MaxY): {MaxX} x {MaxY}");
-    
-        // Если нужно, можно вызвать спавн фигур здесь или оставить вызов в Start()
-        // ShapeManager.AddRandomShapes(ShapeCount, MaxX, MaxY);
-        // _shapesSpawned = true;
-    
-        MainWindow.Opened -= MainWindow_Opened;
-    }
-    
-    // Метод Start делегирует добавление фигур через менеджер фигур
-    public void Start()
-    {
-        // Если размеры ещё не обновились, пробуем их получить
-        if (MaxX <= 0 || MaxY <= 0)
+        private void ToggleFullScreen()
         {
-            MaxX = (int)Stage.GameCanvas.Bounds.Width;
-            MaxY = (int)Stage.GameCanvas.Bounds.Height;
+            if (_isFullScreen)
+            {
+                _mainWindow.WindowState = WindowState.Normal;
+            }
+            else
+            {
+                _mainWindow.WindowState = WindowState.FullScreen;
+            }
+            _isFullScreen = !_isFullScreen;
         }
-    
-        ShapeManager.ClearCanvas();
-        ShapeManager.AddRandomShapes(ShapeCount, MaxX, MaxY);
-    }
-    public void ToggleFullScreen() 
-    {
-        if (IsFullScreen)
+        
+        private void ToggleMenu()
         {
-            MainWindow.WindowState = WindowState.Normal;
+            if (_isMenuOpen)
+            {
+                _menuCanvas.IsHitTestVisible = false;
+                _menuCanvas.Children.Clear();
+            }
+            else
+            {
+                _menu.DrawMenu();
+                _menuCanvas.IsHitTestVisible = true;
+            }
+            _isMenuOpen = !_isMenuOpen;
         }
-        else
-        {
-            MainWindow.WindowState = WindowState.FullScreen;
-        }
-        IsFullScreen = !IsFullScreen;
     }
-
-    // Переключает видимость меню и вызывает эффекты Stage
-    public void ToggleMenu() 
-    { 
-        if (IsMenuOpen) 
-        { 
-            _menuCanvas.IsHitTestVisible = false; 
-            _menuCanvas.Children.Clear(); 
-            //Stage.RemoveBlurEffect();
-        }
-        else 
-        { 
-            _menu.DrawMenu(); 
-            _menuCanvas.IsHitTestVisible = true; 
-           // Stage.ApplyBlurEffect();
-        } 
-        IsMenuOpen = !IsMenuOpen;
-    }
-}

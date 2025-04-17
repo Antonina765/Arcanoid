@@ -2,44 +2,61 @@ using System;
 using Avalonia.Controls;
 
 namespace Arcanoid.Game;
-
 public class GameMenuActions
 {
-    private readonly Game _game;
-
-    public GameMenuActions(Game game)
+    private readonly Stage.Stage _stage;
+    private readonly GameFileManager _fileManager;
+    private readonly Window _mainWindow;
+    private int _shapeCount;
+    private readonly Action _toggleMenu;
+        
+    public GameMenuActions(Stage.Stage stage, GameFileManager fileManager, Window mainWindow, int initialShapeCount, Action toggleMenu)
     {
-        _game = game;
+        _stage = stage;
+        _fileManager = fileManager;
+        _mainWindow = mainWindow;
+        _shapeCount = initialShapeCount;
+        _toggleMenu = toggleMenu;
     }
-
+        
     public void StartGame()
     {
-        _game.ShapeManager.ClearCanvas();
-        _game.Start();
-        _game.ToggleMenu();
+        // Очищаем канвас и создаём новые фигуры
+        _stage.ShapeManager.ClearShapes();
+        _stage.ShapeManager.AddRandomShapes(_shapeCount, (int)_mainWindow.Width, (int)_mainWindow.Height);
+        _toggleMenu();
     }
-
+        
     public void Settings()
     {
-        var settingsWindow = new SettingsWindow(_game.ShapeCount, OnShapeCountChanged);
-        settingsWindow.ShowDialog(_game.MainWindow);
+        var settingsWindow = new SettingsWindow(_shapeCount, OnShapeCountChanged);
+        settingsWindow.ShowDialog(_mainWindow);
     }
-
-    private void OnShapeCountChanged(int newCount)
-    {
-        _game.ShapeCount = newCount;
-        Console.WriteLine("Количество фигур изменено на: " + _game.ShapeCount);
-    }
-
+        
     public void Pause()
     {
         Console.WriteLine("Игра на паузе или выход");
-        _game.ToggleMenu();
+        _toggleMenu();
     }
-
+        
     public void Exit()
     {
-        _game.MainWindow.Close();
+        _mainWindow.Close();
     }
-
+        
+    public void SaveGame()
+    {
+        _fileManager.SaveGame();
+    }
+        
+    public void LoadGame()
+    {
+        _fileManager.LoadGame();
+    }
+        
+    private void OnShapeCountChanged(int newCount)
+    {
+        _shapeCount = newCount;
+        Console.WriteLine($"Количество фигур изменено на: {_shapeCount}");
+    }
 }

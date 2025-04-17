@@ -11,69 +11,30 @@ namespace Arcanoid.Stage;
 public class Stage
 {
     public Canvas GameCanvas { get; private set; }
-    public List<DisplayObject> Shapes { get; private set; } = new List<DisplayObject>();
-    
-    private readonly DispatcherTimer _timer;
+        
+    public StageShapeManager ShapeManager { get; private set; }
+    public StageMovementManager MovementManager { get; private set; }
+    public StageDataManager DataManager { get; private set; }
     
     public Stage()
     {
         GameCanvas = new Canvas
         {
-            Background = Brushes.Black,
-            Focusable = true,  // Чтобы канвас принимал клавиатурные события
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            VerticalAlignment = VerticalAlignment.Stretch
+            Background = Brushes.Black
         };
-
-        // Устанавливаем фокус для получения событий клавиатуры
-        GameCanvas.Focus();
-        
-        // Подписываемся на событие нажатия клавиш
-        GameCanvas.KeyDown += OnKeyDown;
-        
-        _timer = new DispatcherTimer
-        {
-            Interval = TimeSpan.FromMilliseconds(16)
-        };
-        _timer.Tick += OnTimerTick;
-        
-        //Shapes = new List<DisplayObject>();
+            
+        ShapeManager = new StageShapeManager(GameCanvas);
+        MovementManager = new StageMovementManager(ShapeManager);
+        DataManager = new StageDataManager(GameCanvas, ShapeManager);
     }
-    
-    private void OnKeyDown(object sender, Avalonia.Input.KeyEventArgs e)
+        
+    // Статический метод для генерации случайного цвета
+    public static (byte, byte, byte) GetRandomBrush()
     {
-        switch(e.Key)
-        {
-            case Avalonia.Input.Key.Z:
-                // При нажатии Z увеличиваем ускорение на каждой фигуре
-                foreach (var shape in Shapes)
-                {
-                    // Повышаем ускорение. Подберите нужное значение инкремента (здесь, например, 0.5)
-                    shape.Acceleration += 0.5;
-                }
-                break;
-
-            case Avalonia.Input.Key.X:
-                // При нажатии X сбрасываем ускорение, оставляя скорость неизменной
-                foreach (var shape in Shapes)
-                {
-                    shape.Acceleration = 0;
-                }
-                break;
-        }
+        Random rand = new Random();
+        byte r = (byte)rand.Next(256);
+        byte g = (byte)rand.Next(256);
+        byte b = (byte)rand.Next(256);
+        return (r, g, b);
     }
-    
-    private void OnTimerTick(object sender, EventArgs e)
-    {
-        foreach (var shape in Shapes)
-        {
-            shape.Move();
-        }
-    }
-    
-    /*public void ApplyBlurEffect()
-    { }
-    public void RemoveBlurEffect()
-    { }*/
-
 }
