@@ -16,6 +16,11 @@ public class StageShapeManager
         {
             _canvas = canvas;
         }
+
+        public void RedrawCanvas()
+        {
+            _canvas.InvalidateVisual();
+        }
         
         public void AddRandomShapes(int count, int maxX, int maxY)
         {
