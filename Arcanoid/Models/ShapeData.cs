@@ -2,7 +2,6 @@ using System.Collections.Generic;
 
 namespace Arcanoid.Models;
 
-
 public class ShapeData
 {
     public string ShapeType { get; set; }
