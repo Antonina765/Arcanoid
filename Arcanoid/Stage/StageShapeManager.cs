@@ -145,4 +145,16 @@ public class StageShapeManager
             shape2.Speed = originalSpeed2;
         }
     }
+    
+    public void RemoveShape(DisplayObject shape)
+    {
+        if (Shapes.Contains(shape))
+        {
+            Shapes.Remove(shape);
+            if (_canvas.Children.Contains(shape.Shape))
+            {
+                _canvas.Children.Remove(shape.Shape);
+            }
+        }
+    }
 }

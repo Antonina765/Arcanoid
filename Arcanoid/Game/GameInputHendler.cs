@@ -1,4 +1,5 @@
 using System;
+using Arcanoid.Models;
 using Avalonia.Input;
 
 namespace Arcanoid.Game;
@@ -6,15 +7,19 @@ namespace Arcanoid.Game;
 public class GameInputHelder
 { 
     private readonly Stage.Stage _stage; 
+    public readonly Platform _platform;
+    public readonly SpecialBall _specialBall;
     private readonly Action _toggleFullScreen; 
     private readonly Func<bool> _isMenuOpen;
     
     private bool _isRunWithAcceleration; 
     private bool _isRunWithoutAcceleration;
     
-    public GameInputHelder(Stage.Stage stage, Action toggleFullScreen, Func<bool> isMenuOpen) 
+    public GameInputHelder(Stage.Stage stage, Platform platform, SpecialBall specialBall ,Action toggleFullScreen, Func<bool> isMenuOpen) 
     { 
         _stage = stage; 
+        _platform = platform;
+        _specialBall = specialBall;
         _toggleFullScreen = toggleFullScreen; 
         _isMenuOpen = isMenuOpen;
     }
@@ -34,6 +39,21 @@ public class GameInputHelder
         }
         else if (!_isMenuOpen()) 
         { 
+            if (e.Key == Avalonia.Input.Key.Left)
+            {
+                _platform.MoveLeft(20);
+            }
+            else if (e.Key == Avalonia.Input.Key.Right)
+            {
+                _platform.MoveRight(20);
+            }
+            else if (e.Key == Avalonia.Input.Key.F)
+            {
+                Console.WriteLine("Клавиша A нажата: запуск специального шарика");
+                if (!_specialBall.IsLaunched)
+                    _specialBall.Launch();
+            }
+            
             if (e.Key == Avalonia.Input.Key.Space) 
             { 
                 _stage.MovementManager.StopMovement(); 

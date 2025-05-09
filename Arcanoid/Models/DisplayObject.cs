@@ -27,8 +27,13 @@ public abstract class DisplayObject
 
         var rand = new Random();
         
-        X = rand.Next(50, _maxX - 100);
-        Y = rand.Next(50, _maxY - 100);
+        int minX = 50;
+        int maxX = (_maxX - 100) > minX ? (_maxX - 100) : (minX + 50);
+        int minY = 50;
+        int maxY = (_maxY - 100) > minY ? (_maxY - 100) : (minY + 50);
+        
+        X = rand.Next(minX, maxX);
+        Y = rand.Next(minY,maxY);
         //X = rand.Next(0, _maxX);
         //Y = rand.Next(0, _maxY);
         Speed = rand.Next(1, 10);
@@ -41,7 +46,7 @@ public abstract class DisplayObject
         Acceleration = acceleration;
     }
 
-    public void Move()
+    public virtual void Move()
     {
         double speedX = Speed * Math.Cos(AngleSpeed);
         double speedY = Speed * Math.Sin(AngleSpeed);
