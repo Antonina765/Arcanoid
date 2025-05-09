@@ -61,7 +61,7 @@ public class Game
 
         _gameTimer = new DispatcherTimer
         {
-            Interval = TimeSpan.FromSeconds(16)
+            Interval = TimeSpan.FromSeconds(0.03)
         };
         _gameTimer.Tick += (sender, args) => GameUpdate();
         _gameTimer.Start();
