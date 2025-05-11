@@ -3,13 +3,13 @@ namespace Arcanoid.Models;
 public enum BonusType
 {
     IncreaseSpecialBallSpeed,
-    DecreaseSpecialBallSpeed,
     IncreasePlatformWidth,
-    DecreasePlatformWidth,
     ExtraPoints,
     ExtraAttempt,
-    BonusType5,
-    BonusType6,
-    BonusType7,
-    BonusType8
+    ExtraBall, // теперь два особых шарика на 10 секурнд
+    DecreaseSpecialBallSpeed,
+    DecreasePlatformWidth,
+    MinusPoints,
+    MinusAttempt,
+    Bonus10
 }

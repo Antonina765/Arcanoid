@@ -7,7 +7,7 @@ namespace Arcanoid.Models;
 public class BonusItem
 {
     public BonusType Type { get; set; }
-    public Shape Icon { get; private set; }
+    public Ellipse Icon { get; private set; }
     public double X { get; set; }
     public double Y { get; set; }
     public double FallSpeed { get; set; } = 2.0;
@@ -23,10 +23,17 @@ public class BonusItem
         {
             Width = 30,
             Height = 30,
-            Fill = new SolidColorBrush(Colors.Yellow)
+            Fill = IsPositive(type) ? Brushes.Green : Brushes.Red,
         };
+        
+        Canvas.SetLeft(Icon, X);
+        Canvas.SetTop(Icon, Y);
     }
 
+    public bool IsPositive(BonusType type)
+    {
+        return ((int)type) < 5;
+    }
     public void Draw(Canvas canvas)
     {
         if (!canvas.Children.Contains(Icon))
@@ -38,5 +45,6 @@ public class BonusItem
     public void UpdatePosition()
     {
         Y += FallSpeed;
+        Canvas.SetTop(Icon, X);
     }
 }

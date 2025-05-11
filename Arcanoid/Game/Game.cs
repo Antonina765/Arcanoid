@@ -31,6 +31,7 @@ public class Game
     private bool _isFullScreen = true; 
     private bool _isMenuOpen; 
     private int _shapeCount = 20;
+    public bool GameStarted { get; set; } = false;
     
     private readonly GameFileManager _fileManager; 
     private readonly GameInputHelder _inputHelder; 
@@ -152,11 +153,25 @@ public class Game
         if (_specialBall.IsLaunched) 
         { 
             _specialBall.Move(); 
+            
+            // Проверяем столкновение с платформой
+            if (DetectPlatformCollision(_specialBall, _platform))
+            {
+                Console.WriteLine("Отскок от платформы!");
+                // Устанавливаем шарик точно над платформой и отражаем его вверх
+                _specialBall.Y = _platform.Y - _specialBall.Shape.Height;
+                _specialBall.AngleSpeed = -Math.Abs(_specialBall.AngleSpeed);
+            }
+            
+            // Если особый шарик касается нижней границы,
+            // уменьшаем количество попыток и перезапускаем игру.
             if (_specialBall.Y >= _mainWindow.Bounds.Height) 
             { 
                 _gameStats.Attempts--; 
                 _gameStats.UpdateDisplay(); 
-                ResetSpecialBallOnPlatform();
+                ResetGame(); 
+                // Прекращаем дальнейшее выполнение, чтобы дать время перезапустить игру
+                return;
             }
         }
         
@@ -169,6 +184,7 @@ public class Game
                 _specialBall.HandleCollisionWith(normalBall); 
                 _stage.ShapeManager.RemoveShape(normalBall); 
                 CreateScoreMessage(normalBall.X, normalBall.Y, "+10");
+                _gameStats.AddScore(10);
                 
                 if (new Random().NextDouble() < 0.3) 
                 { 
@@ -217,7 +233,7 @@ public class Game
     }
     
     // Вспомогательные методы для обнаружения столкновений:
-    private bool DetectCircleCollision(DisplayObject a, DisplayObject b)
+    public bool DetectCircleCollision(DisplayObject a, DisplayObject b)
     {
         double dx = (a.X + a.Size[0] / 2) - (b.X + b.Size[0] / 2);
         double dy = (a.Y + a.Size[0] / 2) - (b.Y + b.Size[0] / 2);
@@ -225,38 +241,89 @@ public class Game
         return distance < ((double)a.Size[0] / 2 + (double)b.Size[0] / 2);
     }
 
-    private bool DetectBonusPlatformCollision(BonusItem bonus, Platform platform)
-    { 
-        double platLeft = platform.X; 
-        double platRight = platform.X + platform.Shape.Bounds.Width; 
-        double platTop = platform.Y; 
-        double platBottom = platform.Y + platform.Shape.Bounds.Height;
+    public void ResetGame()
+    {
+        // 1. Проверяем, если попытки закончились, завершаем игру.
+        if (_gameStats.Attempts <= 0)
+        {
+            Console.WriteLine("Попытки исчерпаны. Игра завершается.");
+            _mainWindow.Close(); // или Application.Current.Exit();
+            return;
+        }
         
-        double bonusLeft = bonus.X; 
-        double bonusRight = bonus.X + bonus.Icon.Bounds.Width; 
-        double bonusTop = bonus.Y; 
-        double bonusBottom = bonus.Y + bonus.Icon.Bounds.Height;
+        // 2. Очистка обычных шаров, бонусов и сообщений.
+        _stage.ShapeManager.ClearShapes();
+        _menuCanvas.Children.Clear();  // Если бонусы и сообщения рисуются на отдельном канве
+
+        // 3. Перезапуск уровня: добавляем новые обычные шары в зависимости от уровня.
+        int newShapeCount = 20 + (_gameStats.Level * 5);
+        _stage.ShapeManager.AddRandomShapes(newShapeCount, (int)_mainWindow.Width, (int)_mainWindow.Height);
+
+        // 4. Сброс платформы:
+        // Вычисляем положение платформы – горизонтально по центру, с небольшим отступом от низа.
+        double canvasWidth = _stage.GameCanvas.Bounds.Width;
+        double canvasHeight = _stage.GameCanvas.Bounds.Height;
+        _platform.X = (canvasWidth - _platform.Shape.Width) / 2;
+        _platform.Y = canvasHeight - _platform.Shape.Height - 10;
+        _platform.Draw();
+    
+        // Убедимся, что графический элемент платформы добавлен в GameCanvas
+        if (!_stage.GameCanvas.Children.Contains(_platform.Shape))
+        {
+            _stage.GameCanvas.Children.Add(_platform.Shape);
+        }
+
+        // 5. Сброс особого шарика на платформу:
+        ResetSpecialBallOnPlatform();
+        if (!_stage.GameCanvas.Children.Contains(_specialBall.Shape))
+        {
+            _stage.GameCanvas.Children.Add(_specialBall.Shape);
+        }
         
-        return bonusRight > platLeft && bonusLeft < platRight &&
-               bonusBottom > platTop && bonusTop < platBottom;
+        // 6. Вывод информационного сообщения в консоль
+        Console.WriteLine("Попытка потеряна. Игра перезапущена.");
     }
 
-    // Здесь же реализуй методы:
-    // CreateScoreMessage(double x, double y, string message), CreateBonus(double x, double y),
-    // ApplyBonusEffect(BonusType type), NextLevel(), ResetSpecialBallOnPlatform() и т.д.
-    // Эти методы отвечают за создание бонусов, сообщений и переход на следующий уровень.
-
+    public bool DetectBonusPlatformCollision(BonusItem bonus, Platform platform)
+    {
+        const double tolerance = 20.0;
+        
+        double bonusLeft = Canvas.GetLeft(bonus.Icon);
+        double bonusTop = Canvas.GetTop(bonus.Icon);
+        double bonusBottom = bonusTop + bonus.Icon.Height;
+        double bonusCenterX = bonusLeft + bonus.Icon.Width / 2;
+        
+        double platformLeft = Canvas.GetLeft(platform.Shape);
+        double platformTop = Canvas.GetTop(platform.Shape);
+        double platformRight = platformLeft + platform.Shape.Width;
+    
+        // Если бонус "прилипает" к платформе: его нижняя граница в пределах 10 пикселей от верхней границы платформы
+        // и горизонтально центр бонуса находится внутри платформы.
+        if (bonusBottom >= platformTop && bonusBottom <= platformTop + tolerance)
+        {
+            if(bonusCenterX >= platformLeft && bonusCenterX <= platformRight)
+                return true;
+        }
+    
+        return false;
+    }
+    
     private void ResetSpecialBallOnPlatform()
     {
         // Устанавливаем специальный шарик на платформу в центре, сбрасываем флаг запуска
         _specialBall.IsLaunched = false;
-        _specialBall.X = _platform.X + (_platform.Shape.Bounds.Width - _specialBall.Shape.Bounds.Width) / 2;
-        _specialBall.Y = _platform.Y - _specialBall.Shape.Bounds.Height;
+        _specialBall.X = Canvas.GetLeft(_platform.Shape) + (_platform.Shape.Width - _specialBall.Shape.Width) / 2;
+        _specialBall.Y = Canvas.GetTop(_platform.Shape) - _specialBall.Shape.Height;
         _specialBall.Draw();
+        
+        if (!_stage.GameCanvas.Children.Contains(_specialBall.Shape))
+        {
+            _stage.GameCanvas.Children.Add(_specialBall.Shape);
+        }
     }
 
     // Пример для создания сообщения с очками:
-    private void CreateScoreMessage(double x, double y, string text) 
+    public void CreateScoreMessage(double x, double y, string text) 
     { 
         var scoreMsg = new ScoreMessage(text, x, y); 
         _activeScoreMessages.Add(scoreMsg); 
@@ -264,7 +331,7 @@ public class Game
     }
 
     // Пример создания бонуса
-    private void CreateBonus(double x, double y)
+    public void CreateBonus(double x, double y)
     {
         // Случайный выбор бонуса, здесь можно улучшить логику
         var randomBonus = (BonusType)new Random().Next(0, 10);
@@ -274,44 +341,212 @@ public class Game
     }
 
     // Пример применения эффекта бонуса
-    private void ApplyBonusEffect(BonusType type)
+    public void ApplyBonusEffect(BonusType type)
     {
         switch (type)
         {
-            case BonusType.IncreaseSpecialBallSpeed: 
+            case BonusType.IncreaseSpecialBallSpeed:
+                Console.WriteLine("Скорость шарика увеличилась");
                 _specialBall.Speed *= 1.2; 
                 break;
             case BonusType.DecreaseSpecialBallSpeed: 
+                Console.WriteLine("Скорость шарика уменьшилась");
                 _specialBall.Speed *= 0.8; 
                 break;
             case BonusType.IncreasePlatformWidth: 
+                Console.WriteLine("Ширина платформы увеличилась");
                 // Увеличить ширину платформы и обновить отрисовку
                 _platform.Shape.Width += 20; 
                 break;
             case BonusType.DecreasePlatformWidth: 
+                Console.WriteLine("Ширина платформы уменьшилась");
                 _platform.Shape.Width = Math.Max(50, _platform.Shape.Width - 20); 
                 break;
             case BonusType.ExtraPoints: 
+                Console.WriteLine("Дополнительные очки +50");
                 _gameStats.AddScore(50); 
                 break;
             case BonusType.ExtraAttempt: 
+                Console.WriteLine("Дополнительная попытка");
                 _gameStats.Attempts++; 
                 _gameStats.UpdateDisplay(); 
                 break;
-            // Другие бонусы…
+           case BonusType.MinusAttempt:
+                Console.WriteLine("Минус попытка");
+               _gameStats.Attempts--;
+               _gameStats.UpdateDisplay(); 
+               break;
+           case BonusType.MinusPoints:
+                Console.WriteLine("Вычитание очков -50");
+                _gameStats.AddScore(-50); 
+               break;
+           case BonusType.ExtraBall:
+                Console.WriteLine("Дополнительный шарик на 10 секунд");
+                CreateExtraSpecialBall(10);
+               break;
             default: 
                 break;
         } 
         _gameStats.UpdateDisplay();
     }
+    
+    private void CreateExtraSpecialBall(int durationInSeconds)
+    {
+        // Создаем новый особый шарик с теми же начальными параметрами
+        SpecialBall extraBall = new SpecialBall(_stage.GameCanvas, (int)_mainWindow.Width, (int)_mainWindow.Height, new List<int>{20}, 255, 0, 0, 255, 255,0);
+        extraBall.Launch();
+        _stage.ShapeManager.Shapes.Add(extraBall);
 
-    // Пример перехода на следующий уровень
-    private void NextLevel()
+        // Запускаем таймер, чтобы удалить extraBall через durationInSeconds секунд
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(durationInSeconds) };
+        timer.Tick += (s, e) =>
+        {
+            timer.Stop();
+            _stage.ShapeManager.RemoveShape(extraBall);
+            _stage.GameCanvas.Children.Remove(extraBall.Shape);
+            Console.WriteLine("Дополнительный особый шарик удален по истечении времени.");
+        };
+        timer.Start();
+    }
+    
+    public void NextLevel()
     {
         _gameStats.Level++;
-        // Изменяем сложность: увеличиваем число шариков, повышаем скорость и т.д.
-        _stage.ShapeManager.AddRandomShapes(20 + (_gameStats.Level * 5), (int)_mainWindow.Width, (int)_mainWindow.Height);
         _gameStats.UpdateDisplay();
+
+        // Перегенерируем обычные шары
+        _stage.ShapeManager.ClearShapes();
+        int newShapeCount = 20 + (_gameStats.Level * 5);
+        _stage.ShapeManager.AddRandomShapes(newShapeCount, (int)_mainWindow.Width, (int)_mainWindow.Height);
+
+        // Сброс платформы
+        double canvasWidth = _stage.GameCanvas.Bounds.Width;
+        double canvasHeight = _stage.GameCanvas.Bounds.Height;
+        _platform.X = (canvasWidth - _platform.Shape.Width) / 2;
+        _platform.Y = canvasHeight - _platform.Shape.Height - 10;
+        _platform.Draw();
+        if (!_stage.GameCanvas.Children.Contains(_platform.Shape))
+        {
+            _stage.GameCanvas.Children.Add(_platform.Shape);
+        }
+
+        // Сброс специального шарика на платформу
+        ResetSpecialBallOnPlatform();
+    
+        // Игра ждёт нажатия клавиши F для запуска нового уровня
+        GameStarted = false;
+    
+        Console.WriteLine("Переход на следующий уровень. Нажмите F для старта.");
+    }
+
+    public void GameOver()
+    {
+        GameStarted = false;
+    
+        // Очистим канва для отрисовки оверлея (если используется отдельный канвас для UI)
+        _menuCanvas.Children.Clear();
+    
+        // Создаём прозрачный оверлей (Grid) – он будет перекрывать игровой канвас
+        var overlayGrid = new Grid
+        {
+            Width = _mainWindow.Width,
+            Height = _mainWindow.Height,
+            Background = new SolidColorBrush(Color.FromArgb(128, 0, 0, 0)) // полупрозрачный тёмный фон
+        };
+
+        // Текст сообщения "Игра завершена"
+        var gameOverText = new TextBlock
+        {
+            Text = "Игра завершена",
+            FontSize = 32,
+            Foreground = Brushes.Red,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 0, 50)
+        };
+
+        // Кнопка "Начать заново"
+        var restartButton = new Button
+        {
+            Content = "Начать заново",
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        // При нажатии на кнопку вызывается метод для перезапуска игры
+        restartButton.Click += (sender, e) =>
+        {
+            RestartGame();
+            // Убираем оверлей из канвы
+            _menuCanvas.Children.Remove(overlayGrid);
+        };
+
+        // Добавляем текст и кнопку в оверлей (Grid)
+        overlayGrid.Children.Add(gameOverText);
+        overlayGrid.Children.Add(restartButton);
+
+        // Добавляем оверлей на _menuCanvas (предполагается, что _menuCanvas расположен поверх игрового канвы)
+        _menuCanvas.Children.Add(overlayGrid);
+    }
+
+    public void RestartGame()
+    {
+        // Сбрасываем статистику игры
+        _gameStats.Attempts = 3;
+        _gameStats.Score = 0;
+        _gameStats.Level = 1;
+        _gameStats.UpdateDisplay();
+
+        // Очищаем обычные шары
+        _stage.ShapeManager.ClearShapes();
+        // Очищаем дополнительные элементы UI (например, для бонусов и сообщений)
+        _menuCanvas.Children.Clear();
+
+        // Переставляем платформу в нижнюю часть канвы (отцентровав её)
+        double canvasWidth = _stage.GameCanvas.Bounds.Width;
+        double canvasHeight = _stage.GameCanvas.Bounds.Height;
+        _platform.X = (canvasWidth - _platform.Shape.Width) / 2;
+        _platform.Y = canvasHeight - _platform.Shape.Height - 10;
+        _platform.Draw();
+        if (!_stage.GameCanvas.Children.Contains(_platform.Shape))
+        {
+            _stage.GameCanvas.Children.Add(_platform.Shape);
+        }
+
+        // Сбрасываем особый шарик на платформу – он должен быть неподвижным, 
+        // чтобы движение запускалось только после нажатия F
+        ResetSpecialBallOnPlatform();
+        if (!_stage.GameCanvas.Children.Contains(_specialBall.Shape))
+        {
+            _stage.GameCanvas.Children.Add(_specialBall.Shape);
+        }
+
+        // Перегенерируем обычные шары
+        int newShapeCount = 20 + (_gameStats.Level * 5);
+        _stage.ShapeManager.AddRandomShapes(newShapeCount, (int)_mainWindow.Width, (int)_mainWindow.Height);
+
+        // Переводим игру в состояние ожидания – до нажатия F объекты не двигаются
+        GameStarted = false;
+
+        Console.WriteLine("Игра сброшена. Для начала игры нажмите F.");
+    }
+
+    public bool DetectPlatformCollision(SpecialBall ball, Platform platform)
+    {
+        double ballBottom = ball.Y + ball.Shape.Height;
+        double platformTop = platform.Y;
+        double platformLeft = platform.X;
+        double platformRight = platform.X + platform.Shape.Width;
+        double ballCenter = ball.X + ball.Shape.Width / 2;
+    
+        const double tolerance = 10.0;
+        // Если нижняя часть шарика касается верхней части платформы (с некоторым допуском)
+        if (ballBottom >= platformTop && ballBottom <= platformTop + tolerance)
+        {
+            if (ballCenter >= platformLeft && ballCenter <= platformRight)
+                return true;
+        }
+        return false;
     }
     
     private void OnKeyDown(object sender, KeyEventArgs e) 

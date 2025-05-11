@@ -7,10 +7,11 @@ namespace Arcanoid.Game;
 public class GameInputHelder
 { 
     private readonly Stage.Stage _stage; 
-    public readonly Platform _platform;
-    public readonly SpecialBall _specialBall;
+    private readonly Platform _platform;
+    private readonly SpecialBall _specialBall;
     private readonly Action _toggleFullScreen; 
     private readonly Func<bool> _isMenuOpen;
+    private readonly Game _game;
     
     private bool _isRunWithAcceleration; 
     private bool _isRunWithoutAcceleration;
