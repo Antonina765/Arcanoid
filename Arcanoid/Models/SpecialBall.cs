@@ -24,7 +24,7 @@ public class SpecialBall : CircleObject
     public void Launch()
     {
         Console.WriteLine("Запуск особого шарика");
-        //Speed = 15;
+        Speed = 7;
         // Выбираем угол от -135 до -45 градусов, чтобы шарик летел вверх 
         Random rand = new Random();
         double angle = - (3 * Math.PI / 4) + (rand.NextDouble() * (Math.PI / 2)); 

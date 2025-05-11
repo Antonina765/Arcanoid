@@ -42,11 +42,11 @@ public class GameInputHelder
         { 
             if (e.Key == Avalonia.Input.Key.Left)
             {
-                _platform.MoveLeft(20);
+                _platform.MoveLeft(30);
             }
             else if (e.Key == Avalonia.Input.Key.Right)
             {
-                _platform.MoveRight(20);
+                _platform.MoveRight(30);
             }
             else if (e.Key == Avalonia.Input.Key.F)
             {
