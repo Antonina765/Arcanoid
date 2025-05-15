@@ -16,13 +16,16 @@ public class GameInputHelder
     private bool _isRunWithAcceleration; 
     private bool _isRunWithoutAcceleration;
     
-    public GameInputHelder(Stage.Stage stage, Platform platform, SpecialBall specialBall ,Action toggleFullScreen, Func<bool> isMenuOpen) 
+    public GameInputHelder(Stage.Stage stage, Platform platform, SpecialBall specialBall ,Action toggleFullScreen, Func<bool> isMenuOpen, Game game) 
     { 
         _stage = stage; 
         _platform = platform;
         _specialBall = specialBall;
         _toggleFullScreen = toggleFullScreen; 
         _isMenuOpen = isMenuOpen;
+        _game = game;
+        
+        _stage.MovementManager.StopMovement();
     }
     
     public void HandleKeyDown(KeyEventArgs e, Action toggleMenu) 
@@ -33,31 +36,42 @@ public class GameInputHelder
         }
         else if (e.Key == Avalonia.Input.Key.M) 
         { 
-            _stage.MovementManager.StopMovement(); 
-            _isRunWithAcceleration = false; 
-            _isRunWithoutAcceleration = false; 
+            //_stage.MovementManager.StopMovement();
+            //_specialBall.Stop();
+            _game.GameStarted = false;
+            //_isRunWithAcceleration = false; 
+            //_isRunWithoutAcceleration = false; 
             toggleMenu();
+        }
+        else if (e.Key == Avalonia.Input.Key.Left)
+        {
+            _platform.MoveLeft(30);
+        }
+        else if (e.Key == Avalonia.Input.Key.Right)
+        {
+            _platform.MoveRight(30);
         }
         else if (!_isMenuOpen()) 
         { 
-            if (e.Key == Avalonia.Input.Key.Left)
+            if (e.Key == Avalonia.Input.Key.F)
             {
-                _platform.MoveLeft(30);
-            }
-            else if (e.Key == Avalonia.Input.Key.Right)
-            {
-                _platform.MoveRight(30);
-            }
-            else if (e.Key == Avalonia.Input.Key.F)
-            {
-                Console.WriteLine("Клавиша A нажата: запуск специального шарика");
+                Console.WriteLine("Клавиша F нажата: запуск специального шарика");
+                _game.GameStarted = true;
+                _stage.MovementManager.StartMovement(0);
+                _isRunWithAcceleration = true;
+                _isRunWithoutAcceleration = false;
+                
                 if (!_specialBall.IsLaunched)
                     _specialBall.Launch();
+                else
+                    _specialBall.Resume();
             }
             
-            if (e.Key == Avalonia.Input.Key.Space) 
+            else if (e.Key == Avalonia.Input.Key.Space) 
             { 
-                _stage.MovementManager.StopMovement(); 
+                //_stage.MovementManager.StopMovement();
+                _specialBall.Stop();
+                _game.GameStarted = false;
                 _isRunWithAcceleration = false; 
                 _isRunWithoutAcceleration = false;
             }

@@ -9,14 +9,17 @@ public class GameMenuActions
     private readonly Window _mainWindow;
     private int _shapeCount;
     private readonly Action _toggleMenu;
+    private readonly Action _initializeSpecialObjects;
+    private readonly Game _game;
         
-    public GameMenuActions(Stage.Stage stage, GameFileManager fileManager, Window mainWindow, int initialShapeCount, Action toggleMenu)
+    public GameMenuActions(Stage.Stage stage, GameFileManager fileManager, Window mainWindow, int initialShapeCount, Action toggleMenu, Action initializeSpecialObjects)
     {
         _stage = stage;
         _fileManager = fileManager;
         _mainWindow = mainWindow;
         _shapeCount = initialShapeCount;
         _toggleMenu = toggleMenu;
+        _initializeSpecialObjects = initializeSpecialObjects;
     }
         
     public void StartGame()
@@ -24,6 +27,7 @@ public class GameMenuActions
         // Очищаем канвас и создаём новые фигуры
         _stage.ShapeManager.ClearShapes();
         _stage.ShapeManager.AddRandomShapes(_shapeCount, (int)_mainWindow.Width, (int)_mainWindow.Height);
+        _initializeSpecialObjects();
         _toggleMenu();
     }
         

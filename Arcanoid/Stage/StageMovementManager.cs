@@ -43,6 +43,19 @@ public class StageMovementManager
     public void StopMovement()
     {
         _timer.Stop();
+        
+        // Останавливаем все объекты, устанавливая их скорость и ускорение в ноль
+        foreach (var shape in _shapeManager.Shapes)
+        {
+            shape.Speed = 0;
+            shape.Acceleration = 0;
+        }
+        
+        // Останавливаем специальный шарик, если он существует и инициализирован
+        if (_specialBall != null)
+        {
+            _specialBall.Speed = 0;
+        }
     }
         
     /// <summary>
@@ -117,22 +130,25 @@ public class StageMovementManager
         }
         
         // 3. Проверяем столкновения особого шарика с обычными шарами.
-        for (int i = _shapeManager.Shapes.Count - 1; i >= 0; i--)
+        if (_specialBall.IsLaunched)
         {
-            var normalBall = _shapeManager.Shapes[i];
-            if (_game.DetectCircleCollision(_specialBall, normalBall))
+            for (int i = _shapeManager.Shapes.Count - 1; i >= 0; i--)
             {
-                _specialBall.HandleCollisionWith(normalBall);
-                _shapeManager.RemoveShape(normalBall);
-                
-                // Всегда создаём сообщение и прибавляем 10 очков.
-                _game.CreateScoreMessage(normalBall.X, normalBall.Y, "+10");
-                _gameStats.AddScore(10);
-
-                // Бонус генерируется случайно (30% шанс).
-                if (new Random().NextDouble() < 0.3)
+                var normalBall = _shapeManager.Shapes[i];
+                if (_game.DetectCircleCollision(_specialBall, normalBall))
                 {
-                    _game.CreateBonus(normalBall.X, normalBall.Y);
+                    _specialBall.HandleCollisionWith(normalBall);
+                    _shapeManager.RemoveShape(normalBall);
+                    
+                    // Всегда создаём сообщение и прибавляем 10 очков.
+                    _game.CreateScoreMessage(normalBall.X, normalBall.Y, "+10");
+                    _gameStats.AddScore(10);
+    
+                    // Бонус генерируется случайно (30% шанс).
+                    if (new Random().NextDouble() < 0.3)
+                    {
+                        _game.CreateBonus(normalBall.X, normalBall.Y);
+                    }
                 }
             }
         }
@@ -174,12 +190,5 @@ public class StageMovementManager
         }
         
         _shapeManager.RedrawCanvas();
-        
-        // (Опционально) Логируем прогноз столкновений.
-        var nextCollisionIn = PredictNextCollisionTime();
-        if (nextCollisionIn.HasValue)
-        {
-            Console.WriteLine($"Прогноз времени до столкновения: {nextCollisionIn.Value:F2} сек.");
-        }
     }
 }

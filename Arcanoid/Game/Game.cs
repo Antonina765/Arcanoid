@@ -76,8 +76,8 @@ public class Game
         };
         
         _fileManager = new GameFileManager(_mainWindow, _stage); 
-        _inputHelder = new GameInputHelder(_stage, _platform, _specialBall, ToggleFullScreen, () => _isMenuOpen); 
-        _menuActions = new GameMenuActions(_stage, _fileManager, _mainWindow, _shapeCount, ToggleMenu);
+        _inputHelder = new GameInputHelder(_stage, _platform, _specialBall, ToggleFullScreen, () => _isMenuOpen, this); 
+        _menuActions = new GameMenuActions(_stage, _fileManager, _mainWindow, _shapeCount, ToggleMenu, InitializeSpecialObjects);
         
         _menu = new GameMenu(
             _menuCanvas, 
@@ -135,6 +135,11 @@ public class Game
         _platform.Y = canvasHeight - _platform.Shape.Bounds.Height - 10;
         _platform.Draw();
     
+        // Явно добавляем платформу в канвас, если её там ещё нет
+        if (!_stage.GameCanvas.Children.Contains(_platform.Shape))
+        {
+            _stage.GameCanvas.Children.Add(_platform.Shape);
+        }
         // Создаем специальный шарик – убедись, что он добавлен в ту же канву
         //_specialBall = new SpecialBall(_stage.GameCanvas, (int)canvasWidth, (int)canvasHeight, new List<int> { 20 }, 255, 0, 0, 255, 255, 0);
         ResetSpecialBallOnPlatform(); // метод, который установит шарик на платформе
@@ -143,6 +148,11 @@ public class Game
     // Метод обновления игрового цикла, который вызывается на каждом тике таймера
     public void GameUpdate() 
     { 
+        if (!GameStarted) 
+        {
+            _stage.ShapeManager.RedrawCanvas();
+            return;
+        }
         // Обновление движения всех обычных шариков
         foreach (var ball in _stage.ShapeManager.Shapes) 
         { 
@@ -282,6 +292,7 @@ public class Game
         
         // 6. Вывод информационного сообщения в консоль
         Console.WriteLine("Попытка потеряна. Игра перезапущена.");
+        GameStarted = false;
     }
 
     public bool DetectBonusPlatformCollision(BonusItem bonus, Platform platform)
@@ -576,8 +587,12 @@ public class Game
             _menuCanvas.IsHitTestVisible = false; 
             _menuCanvas.Children.Clear();
         }
-        else 
-        { 
+        else
+        {
+            GameStarted = false;
+            //_stage.MovementManager.StopMovement();
+            _specialBall.Stop(); // Явно останавливаем специальный шарик
+
             _menu.DrawMenu(); 
             AdjustMenuSize(); 
             _menuCanvas.IsHitTestVisible = true;

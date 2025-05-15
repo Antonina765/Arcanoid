@@ -8,6 +8,9 @@ namespace Arcanoid.Models;
 
 public class SpecialBall : CircleObject
 {
+    private double _savedSpeedX;
+    private double _savedSpeedY;
+    private double _savedAngleSpeed;
     public bool IsLaunched { get; set; }
     public SpecialBall(Canvas canvas, int maxX, int maxY, List<int> size,
         byte R1, byte G1, byte B1, byte R2, byte G2, byte B2)
@@ -93,6 +96,48 @@ public class SpecialBall : CircleObject
         Speed *= 1.1;  // увеличиваем скорость по желанию
 
         // Удаление обычного шарика будет происходить из менеджера шаров (например, удаляем объект из списка и с канвы)
+    }
+    
+    // Останавливает движение шарика без сброса флага IsLaunched
+    public void Stop()
+    {
+        if (IsLaunched)
+        {
+            // Вычисляем текущие компоненты скорости на основе Speed и AngleSpeed
+            double currentSpeedX = Speed * Math.Cos(AngleSpeed);
+            double currentSpeedY = Speed * Math.Sin(AngleSpeed);
+
+            // Сохраняем текущие скорости
+            _savedSpeedX = currentSpeedX;
+            _savedSpeedY = currentSpeedY;
+            _savedAngleSpeed = AngleSpeed;
+                
+            // Останавливаем шарик, устанавливая скорость в 0
+            Speed = 0;
+            AngleSpeed = 0;
+        }
+    }
+    
+    // Возобновляет движение шарика с сохраненными скоростями
+    public void Resume()
+    {
+        if (IsLaunched && Speed == 0)
+        {
+            // Рассчитываем восстановленную скорость по сохранённым компонентам
+            double restoredSpeed = Math.Sqrt(_savedSpeedX * _savedSpeedX + _savedSpeedY * _savedSpeedY);
+            if (restoredSpeed > 0)
+            {
+                Speed = restoredSpeed;
+                AngleSpeed = Math.Atan2(_savedSpeedY, _savedSpeedX);
+            }
+            else
+            {
+                // Если сохранённые значения равны нулю, устанавливаем стандартные значения
+                double angle = new Random().NextDouble() * (Math.PI / 2) + (Math.PI / 4);  // угол от 45 до 135 градусов
+                Speed = 7;
+                AngleSpeed = angle;
+            }
+        }
     }
     
     public override void Draw()
