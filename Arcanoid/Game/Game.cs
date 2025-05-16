@@ -159,6 +159,8 @@ public class Game
             ball.Move();
         }
 
+        _stage.ShapeManager.ResolveNormalBallCollisions();
+        
         // Обновление специального шарика
         if (_specialBall.IsLaunched) 
         { 

@@ -157,4 +157,19 @@ public class StageShapeManager
             }
         }
     }
+    
+    public void ResolveNormalBallCollisions()
+    {
+        for (int i = 0; i < Shapes.Count; i++)
+        {
+            for (int j = i + 1; j < Shapes.Count; j++)
+            {
+                if (IsColliding(Shapes[i], Shapes[j]))
+                {
+                    HandleCollision(Shapes[i], Shapes[j]);
+                    ResolveOverlap(Shapes[i], Shapes[j]);
+                }
+            }
+        }
+    }
 }

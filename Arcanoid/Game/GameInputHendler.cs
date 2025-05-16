@@ -39,8 +39,8 @@ public class GameInputHelder
             //_stage.MovementManager.StopMovement();
             //_specialBall.Stop();
             _game.GameStarted = false;
-            //_isRunWithAcceleration = false; 
-            //_isRunWithoutAcceleration = false; 
+            _isRunWithAcceleration = false; 
+            _isRunWithoutAcceleration = false; 
             toggleMenu();
         }
         else if (e.Key == Avalonia.Input.Key.Left)
