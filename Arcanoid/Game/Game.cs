@@ -195,12 +195,18 @@ public class Game
             { 
                 _specialBall.HandleCollisionWith(normalBall); 
                 _stage.ShapeManager.RemoveShape(normalBall); 
-                CreateScoreMessage(normalBall.X, normalBall.Y, "+10");
-                _gameStats.AddScore(10);
-                
-                if (new Random().NextDouble() < 0.3) 
-                { 
-                    CreateBonus(normalBall.X, normalBall.Y);
+                double bonusX = normalBall.X + (normalBall.Shape.Width -30)/ 2;
+                double bonusY = normalBall.Y + (normalBall.Shape.Height - 30) / 2;
+                var bonusPoint = _stage.GameCanvas.TranslatePoint(new Point(bonusX, bonusY), _menuCanvas);
+                if (bonusPoint.HasValue)
+                {
+                    CreateScoreMessage(bonusPoint.Value.X, bonusPoint.Value.Y, "+10");
+                    _gameStats.AddScore(10);
+    
+                    if (new Random().NextDouble() < 0.6)
+                    {
+                        CreateBonus(bonusPoint.Value.X, bonusPoint.Value.Y);
+                    }
                 }
             }
         }
@@ -211,10 +217,12 @@ public class Game
             bonus.UpdatePosition(); 
             bonus.Draw(_menuCanvas); 
             if (DetectBonusPlatformCollision(bonus, _platform)) 
-            { 
+            {
+                Console.WriteLine("бонус пойман");
                 ApplyBonusEffect(bonus.Type); 
                 _activeBonuses.Remove(bonus); 
                 _menuCanvas.Children.Remove(bonus.Icon);
+                _menuCanvas.InvalidateVisual();
             }
             else if (bonus.Y > _mainWindow.Bounds.Height) 
             { 
@@ -267,6 +275,10 @@ public class Game
         _stage.ShapeManager.ClearShapes();
         _menuCanvas.Children.Clear();  // Если бонусы и сообщения рисуются на отдельном канве
 
+        // 3. Очищаем списки бонусов и сообщений, чтобы старые бонусы не оставались в логике игры.
+        _activeBonuses.Clear();
+        _activeScoreMessages.Clear();
+        
         // 3. Перезапуск уровня: добавляем новые обычные шары в зависимости от уровня.
         int newShapeCount = 20 + (_gameStats.Level * 5);
         _stage.ShapeManager.AddRandomShapes(newShapeCount, (int)_mainWindow.Width, (int)_mainWindow.Height);
@@ -303,22 +315,24 @@ public class Game
         
         double bonusLeft = Canvas.GetLeft(bonus.Icon);
         double bonusTop = Canvas.GetTop(bonus.Icon);
-        double bonusBottom = bonusTop + bonus.Icon.Height;
-        double bonusCenterX = bonusLeft + bonus.Icon.Width / 2;
+        double bonusRight = bonusLeft + bonus.Icon.Width;
+        double bonusBottom = bonusTop + bonus.Icon.Height; 
         
-        double platformLeft = Canvas.GetLeft(platform.Shape);
-        double platformTop = Canvas.GetTop(platform.Shape);
+        // Преобразуем координаты платформы из _stage.GameCanvas в _menuCanvas.
+        var platformPointNullable = _stage.GameCanvas.TranslatePoint(
+            new Point(Canvas.GetLeft(platform.Shape), Canvas.GetTop(platform.Shape)), 
+            _menuCanvas);
+        
+        var platformPoint = platformPointNullable.Value;
+        double platformLeft = platformPoint.X;
+        double platformTop = platformPoint.Y;
         double platformRight = platformLeft + platform.Shape.Width;
+        double platformBottom = platformTop + platform.Shape.Height;
     
-        // Если бонус "прилипает" к платформе: его нижняя граница в пределах 10 пикселей от верхней границы платформы
-        // и горизонтально центр бонуса находится внутри платформы.
-        if (bonusBottom >= platformTop && bonusBottom <= platformTop + tolerance)
-        {
-            if(bonusCenterX >= platformLeft && bonusCenterX <= platformRight)
-                return true;
-        }
-    
-        return false;
+        return bonusLeft < platformRight &&
+               bonusRight > platformLeft &&
+               bonusTop < platformBottom &&
+               bonusBottom > platformTop;
     }
     
     private void ResetSpecialBallOnPlatform()
@@ -350,6 +364,8 @@ public class Game
         var randomBonus = (BonusType)new Random().Next(0, 10);
         var bonus = new BonusItem(randomBonus, x, y); 
         _activeBonuses.Add(bonus); 
+        Canvas.SetLeft(bonus.Icon, x);
+        Canvas.SetTop(bonus.Icon, y);
         bonus.Draw(_menuCanvas);
     }
 

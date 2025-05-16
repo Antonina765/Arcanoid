@@ -160,16 +160,25 @@ public class StageShapeManager
     
     public void ResolveNormalBallCollisions()
     {
-        for (int i = 0; i < Shapes.Count; i++)
+        bool collisionDetected;
+        int maxIterations = 10; // количество повторений для разрешения всех пересечений
+    
+        do
         {
-            for (int j = i + 1; j < Shapes.Count; j++)
+            collisionDetected = false;
+            for (int i = 0; i < Shapes.Count; i++)
             {
-                if (IsColliding(Shapes[i], Shapes[j]))
+                for (int j = i + 1; j < Shapes.Count; j++)
                 {
-                    HandleCollision(Shapes[i], Shapes[j]);
-                    ResolveOverlap(Shapes[i], Shapes[j]);
+                    if (IsColliding(Shapes[i], Shapes[j]))
+                    {
+                        HandleCollision(Shapes[i], Shapes[j]);
+                        ResolveOverlap(Shapes[i], Shapes[j]);
+                        collisionDetected = true;
+                    }
                 }
             }
-        }
+            maxIterations--;
+        } while (collisionDetected && maxIterations > 0);
     }
 }

@@ -7,7 +7,7 @@ namespace Arcanoid.Models;
 public class BonusItem
 {
     public BonusType Type { get; set; }
-    public Ellipse Icon { get; private set; }
+    public Rectangle Icon { get; private set; }
     public double X { get; set; }
     public double Y { get; set; }
     public double FallSpeed { get; set; } = 2.0;
@@ -19,7 +19,7 @@ public class BonusItem
         Y = startY;
 
         // Простой значок – круг желтого цвета
-        Icon = new Ellipse
+        Icon = new Rectangle
         {
             Width = 30,
             Height = 30,
@@ -45,6 +45,6 @@ public class BonusItem
     public void UpdatePosition()
     {
         Y += FallSpeed;
-        Canvas.SetTop(Icon, X);
+        Canvas.SetTop(Icon, Y);
     }
 }
