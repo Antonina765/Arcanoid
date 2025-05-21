@@ -222,6 +222,7 @@ public class Game
                 ApplyBonusEffect(bonus.Type); 
                 _activeBonuses.Remove(bonus); 
                 _menuCanvas.Children.Remove(bonus.Icon);
+                _menuCanvas.Children.Remove(bonus.Label);
                 _menuCanvas.InvalidateVisual();
             }
             else if (bonus.Y > _mainWindow.Bounds.Height) 
@@ -412,6 +413,10 @@ public class Game
            case BonusType.ExtraBall:
                 Console.WriteLine("Дополнительный шарик на 10 секунд");
                 CreateExtraSpecialBall(10);
+               break;
+           case BonusType.Bonus10:
+                Console.WriteLine("Bonus 10");
+                _gameStats.AddScore(-10); 
                break;
             default: 
                 break;
